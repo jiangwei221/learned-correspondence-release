@@ -42,7 +42,7 @@ import numpy as np
 
 import cv2
 from transformations import quaternion_from_matrix
-from utils import loadh5
+from utils import loadh5, embed_breakpoint
 
 
 def load_geom(geom_file, geom_type, scale_factor, flip_R=False):
@@ -286,6 +286,7 @@ def loadFromDir(train_data_dir, gt_div_str="", bUseColorImage=True,
 
 def get_precomputed_kp(precomputed_kp_method, img_file, geom, x, kp, desc):
     if precomputed_kp_method == 'lift':
+        exec(embed_breakpoint())
         desc_file = img_file + ".desc.h5"
         with h5py.File(desc_file, "r") as ifp:
             h5_kp = ifp["keypoints"].value[:, :2]
