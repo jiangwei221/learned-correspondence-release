@@ -133,34 +133,13 @@ def make_xy(num_sample, pairs, kp, z, desc, img, geom, vis, depth, geom_type,
             dump_file = os.path.join(dump_dir, "kp-z-desc-{}.h5".format(i))
             if not os.path.exists(dump_file):
                 if kp[i] is None:
-                    cv_kp, cv_desc = sift.detectAndCompute(img[i].transpose(
-                        1, 2, 0), None)
-                    cx = (img[i][0].shape[1] - 1.0) * 0.5
-                    cy = (img[i][0].shape[0] - 1.0) * 0.5
-                    # Correct coordinates using K
-                    cx += parse_geom(geom, geom_type)["K"][i, 0, 2]
-                    cy += parse_geom(geom, geom_type)["K"][i, 1, 2]
-                    xy = np.array([_kp.pt for _kp in cv_kp])
-                    # Correct focals
-                    fx = parse_geom(geom, geom_type)["K"][i, 0, 0]
-                    fy = parse_geom(geom, geom_type)["K"][i, 1, 1]
+                    xy, cx, cy, fx, fy, cv_desc = compute_sift(img, i, geom, geom_type)
                     kp[i] = (
                         xy - np.array([[cx, cy]])
                     ) / np.asarray([[fx, fy]])
                     desc[i] = cv_desc
                 if z[i] is None:
-                    cx = (img[i][0].shape[1] - 1.0) * 0.5
-                    cy = (img[i][0].shape[0] - 1.0) * 0.5
-                    fx = parse_geom(geom, geom_type)["K"][i, 0, 0]
-                    fy = parse_geom(geom, geom_type)["K"][i, 1, 1]
-                    xy = kp[i] * np.asarray([[fx, fy]]) + np.array([[cx, cy]])
-                    if len(depth) > 0:
-                        z[i] = depth[i][
-                            0,
-                            np.round(xy[:, 1]).astype(int),
-                            np.round(xy[:, 0]).astype(int)][..., None]
-                    else:
-                        z[i] = np.ones((xy.shape[0], 1))
+                    z[i] = compute_z_value(img, i, geom, geom_type, kp, depth)
                 # Write descs to harddisk to parallize
                 dump_dict = {}
                 dump_dict["kp"] = kp[i]
@@ -175,19 +154,9 @@ def make_xy(num_sample, pairs, kp, z, desc, img, geom, vis, depth, geom_type,
     print("")
 
     # Create arguments
-    pool_arg = []
-    idx = 0
-    for ii, jj in cur_pairs:
-        idx += 1
-        pool_arg += [(dump_dir, idx, ii, jj)]
+    pool_arg, queue = create_pool_arg(cur_pairs, dump_dir)
     # Run mp job
-    ratio_CPU = 0.8
-    number_of_process = int(ratio_CPU * mp.cpu_count())
-    pool = mp.Pool(processes=number_of_process)
-    manager = mp.Manager()
-    queue = manager.Queue()
-    for idx_arg in xrange(len(pool_arg)):
-        pool_arg[idx_arg] = pool_arg[idx_arg] + (queue,)
+    pool = create_mp_pool()
     # map async
     pool_res = pool.map_async(dump_data_pair, pool_arg)
     # monitor loop
@@ -362,6 +331,55 @@ def make_xy(num_sample, pairs, kp, z, desc, img, geom, vis, depth, geom_type,
 
     return res_dict
 
+def create_pool_arg(cur_pairs, dump_dir):
+    # Create arguments
+    pool_arg = []
+    idx = 0
+    for ii, jj in cur_pairs:
+        idx += 1
+        pool_arg += [(dump_dir, idx, ii, jj)]
+    manager = mp.Manager()
+    queue = manager.Queue()
+    for idx_arg in xrange(len(pool_arg)):
+        pool_arg[idx_arg] = pool_arg[idx_arg] + (queue,)
+    return pool_arg, queue
+
+def create_mp_pool():
+    # Run mp job
+    ratio_CPU = 0.8
+    number_of_process = int(ratio_CPU * mp.cpu_count())
+    pool = mp.Pool(processes=number_of_process)
+    return pool
+
+def compute_z_value(img, i, geom, geom_type, kp, depth):
+    cx = (img[i][0].shape[1] - 1.0) * 0.5
+    cy = (img[i][0].shape[0] - 1.0) * 0.5
+    fx = parse_geom(geom, geom_type)["K"][i, 0, 0]
+    fy = parse_geom(geom, geom_type)["K"][i, 1, 1]
+    xy = kp[i] * np.asarray([[fx, fy]]) + np.array([[cx, cy]])
+    if len(depth) > 0:
+        cz = depth[i][
+            0,
+            np.round(xy[:, 1]).astype(int),
+            np.round(xy[:, 0]).astype(int)][..., None]
+    else:
+        cz = np.ones((xy.shape[0], 1))
+    return cz
+
+def compute_sift(img, i, geom, geom_type):
+    cv_kp, cv_desc = sift.detectAndCompute(img[i].transpose(
+        1, 2, 0), None)
+    cx = (img[i][0].shape[1] - 1.0) * 0.5
+    cy = (img[i][0].shape[0] - 1.0) * 0.5
+    # Correct coordinates using K
+    cx += parse_geom(geom, geom_type)["K"][i, 0, 2]
+    cy += parse_geom(geom, geom_type)["K"][i, 1, 2]
+    xy = np.array([_kp.pt for _kp in cv_kp])
+    # Correct focals
+    fx = parse_geom(geom, geom_type)["K"][i, 0, 0]
+    fy = parse_geom(geom, geom_type)["K"][i, 1, 1]
+    return xy, cx, cy, fx, fy, cv_desc
+
 
 print("-------------------------DUMP-------------------------")
 print("Note: dump_data.py will only work on the first dataset")
@@ -369,12 +387,12 @@ print("Note: dump_data.py will only work on the first dataset")
 # Read conditions
 crop_center = config.data_crop_center
 data_folder = config.data_dump_prefix
-if config.use_lift:
-    data_folder += "_lift"
+if config.precomputed_kp_method:
+    data_folder += config.precomputed_kp_method
 
 # Prepare opencv
 print("Creating Opencv SIFT instance")
-if not config.use_lift:
+if not config.precomputed_kp_method:
     sift = cv2.xfeatures2d.SIFT_create(
         nfeatures=config.obj_num_kp, contrastThreshold=1e-5)
 
@@ -396,7 +414,7 @@ for _set in ["train", "valid", "test"]:
         "-16x16",
         bUseColorImage=True,
         crop_center=crop_center,
-        load_lift=config.use_lift)
+        precomputed_kp_method=config.precomputed_kp_method)
     if len(kp) == 0:
         kp = [None] * len(img)
     if len(desc) == 0:
