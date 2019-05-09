@@ -89,11 +89,13 @@ data_arg.add_argument(
     "--data_crop_center", type=str2bool, default=False, help=""
     "whether to crop center of the image "
     "to match the expected input for methods that expect a square input")
+# data_arg.add_argument(
+#     "--use_lift", type=str2bool, default=False, help=""
+#     "if this is set to true, we expect lift to be dumped already for all "
+#     "images.")
 data_arg.add_argument(
-    "--use_lift", type=str2bool, default=False, help=""
-    "if this is set to true, we expect lift to be dumped already for all "
-    "images.")
-
+    "--precomputed_kp_method", type=str, default=None, choices=['lift', 'lfnet', 'superpoint'], 
+    help="use precomputed keypoints from lift, lfnet or superpoint")
 
 # -----------------------------------------------------------------------------
 # Objective

@@ -706,6 +706,7 @@ def comp_process(mode, data, res_dir, config):
     num_sample = len(xs)
 
     if config.use_lift:
+        raise NotImplementedError()
         comp_list = [
             "lmeds", "ransac", "mlesac",
             # "usac5point", "usac8point",

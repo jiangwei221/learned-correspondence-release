@@ -87,7 +87,7 @@ def load_geom(geom_file, geom_type, scale_factor, flip_R=False):
 
 
 def loadFromDir(train_data_dir, gt_div_str="", bUseColorImage=True,
-                input_width=512, crop_center=True, load_lift=False):
+                input_width=512, crop_center=True, precomputed_kp_method=None):
     """Loads data from directory.
 
     train_data_dir : Directory containing data
@@ -276,33 +276,44 @@ def loadFromDir(train_data_dir, gt_div_str="", bUseColorImage=True,
         #
         # NOTE: Use the last element added to get the geom and depth
         #
-        if load_lift:
-            desc_file = img_file + ".desc.h5"
-            with h5py.File(desc_file, "r") as ifp:
-                h5_kp = ifp["keypoints"].value[:, :2]
-                h5_desc = ifp["descriptors"].value
-            # Get K (first 9 numbers of geom)
-            K = geom[-1][:9].reshape(3, 3)
-            # Get cx, cy
-            h, w = x[-1].shape[1:]
-            cx = (w - 1.0) * 0.5
-            cy = (h - 1.0) * 0.5
-            cx += K[0, 2]
-            cy += K[1, 2]
-            # Get focals
-            fx = K[0, 0]
-            fy = K[1, 1]
-            # New kp
-            kp += [
-                (h5_kp - np.array([[cx, cy]])) / np.asarray([[fx, fy]])
-            ]
-            # New desc
-            desc += [h5_desc]
+        if precomputed_kp_method:
+            kp, desc = get_precomputed_kp(precomputed_kp_method, img_file, geom, x, kp, desc)
 
     print("")
 
     return (x, np.asarray(geom),
             np.asarray(vis), depth, kp, desc)
+
+def get_precomputed_kp(precomputed_kp_method, img_file, geom, x, kp, desc):
+    if precomputed_kp_method == 'lift':
+        desc_file = img_file + ".desc.h5"
+        with h5py.File(desc_file, "r") as ifp:
+            h5_kp = ifp["keypoints"].value[:, :2]
+            h5_desc = ifp["descriptors"].value
+        # Get K (first 9 numbers of geom)
+        K = geom[-1][:9].reshape(3, 3)
+        # Get cx, cy
+        h, w = x[-1].shape[1:]
+        cx = (w - 1.0) * 0.5
+        cy = (h - 1.0) * 0.5
+        cx += K[0, 2]
+        cy += K[1, 2]
+        # Get focals
+        fx = K[0, 0]
+        fy = K[1, 1]
+        # New kp
+        kp += [
+            (h5_kp - np.array([[cx, cy]])) / np.asarray([[fx, fy]])
+        ]
+        # New desc
+        desc += [h5_desc]
+    elif precomputed_kp_method == 'lfnet':
+        raise NotImplementedError()
+    elif precomputed_kp_method == 'superpoint':
+        raise NotImplementedError()
+    else:
+        raise ValueError('unknown precomputed key point method: {0}'.format(precomputed_kp_method))
+    return kp, desc
 
 
 def load_data(config, var_mode):
@@ -321,8 +332,8 @@ def load_data(config, var_mode):
     ]
 
     data_folder = config.data_dump_prefix
-    if config.use_lift:
-        data_folder += "_lift"
+    if config.precomputed_kp_method:
+        data_folder += config.precomputed_kp_method
 
     # Let's unpickle and save data
     data = {}
