@@ -48,7 +48,7 @@ from config import get_config
 from data import loadFromDir
 from geom import get_episqr, get_episym, get_sampsons, parse_geom
 from six.moves import xrange
-from utils import loadh5, saveh5
+from utils import loadh5, saveh5, embed_breakpoint
 
 eps = 1e-10
 use3d = False
@@ -133,6 +133,7 @@ def make_xy(num_sample, pairs, kp, z, desc, img, geom, vis, depth, geom_type,
             dump_file = os.path.join(dump_dir, "kp-z-desc-{}.h5".format(i))
             if not os.path.exists(dump_file):
                 if kp[i] is None:
+                    assert config.precomputed_kp_method is None, 'please load and use precomputed keypionts'
                     xy, cx, cy, fx, fy, cv_desc = compute_sift(img, i, geom, geom_type)
                     kp[i] = (
                         xy - np.array([[cx, cy]])

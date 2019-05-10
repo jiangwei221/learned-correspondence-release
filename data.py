@@ -286,34 +286,63 @@ def loadFromDir(train_data_dir, gt_div_str="", bUseColorImage=True,
 
 def get_precomputed_kp(precomputed_kp_method, img_file, geom, x, kp, desc):
     if precomputed_kp_method == 'lift':
-        exec(embed_breakpoint())
-        desc_file = img_file + ".desc.h5"
-        with h5py.File(desc_file, "r") as ifp:
-            h5_kp = ifp["keypoints"].value[:, :2]
-            h5_desc = ifp["descriptors"].value
-        # Get K (first 9 numbers of geom)
-        K = geom[-1][:9].reshape(3, 3)
-        # Get cx, cy
-        h, w = x[-1].shape[1:]
-        cx = (w - 1.0) * 0.5
-        cy = (h - 1.0) * 0.5
-        cx += K[0, 2]
-        cy += K[1, 2]
-        # Get focals
-        fx = K[0, 0]
-        fy = K[1, 1]
-        # New kp
-        kp += [
-            (h5_kp - np.array([[cx, cy]])) / np.asarray([[fx, fy]])
-        ]
-        # New desc
-        desc += [h5_desc]
+        kp, desc = get_precomputed_kp_lift(img_file, geom, x, kp, desc)
     elif precomputed_kp_method == 'lfnet':
-        raise NotImplementedError()
+        kp, desc = get_precomputed_kp_lfnet(img_file, geom, x, kp, desc)
     elif precomputed_kp_method == 'superpoint':
         raise NotImplementedError()
     else:
         raise ValueError('unknown precomputed key point method: {0}'.format(precomputed_kp_method))
+    return kp, desc
+
+def get_precomputed_kp_lift(img_file, geom, x, kp, desc):
+    desc_file = img_file + ".desc.h5"
+    with h5py.File(desc_file, "r") as ifp:
+        h5_kp = ifp["keypoints"].value[:, :2]
+        h5_desc = ifp["descriptors"].value
+    # Get K (first 9 numbers of geom)
+    K = geom[-1][:9].reshape(3, 3)
+    # Get cx, cy
+    h, w = x[-1].shape[1:]
+    cx = (w - 1.0) * 0.5
+    cy = (h - 1.0) * 0.5
+    cx += K[0, 2]
+    cy += K[1, 2]
+    # Get focals
+    fx = K[0, 0]
+    fy = K[1, 1]
+    # New kp
+    kp += [
+        (h5_kp - np.array([[cx, cy]])) / np.asarray([[fx, fy]])
+    ]
+    # New desc
+    desc += [h5_desc]
+    return kp, desc
+
+
+def get_precomputed_kp_lfnet(img_file, geom, x, kp, desc):
+    lfnet_feat_dir = '/home/jiangwei/Desktop/temp/lf-net-release/outputs_lfnet_feat'
+    desc_file = os.path.join(lfnet_feat_dir, '{0}.npz'.format(img_file.replace('./datasets/', '').replace('/images', '')))
+    lfnet_feat_data = np.load(desc_file)
+    h5_kp = lfnet_feat_data['kpts'][:, :2]
+    h5_desc = lfnet_feat_data['descs']
+    K = geom[-1][:9].reshape(3, 3)
+    # Get cx, cy
+    h, w = x[-1].shape[1:]
+    cx = (w - 1.0) * 0.5
+    cy = (h - 1.0) * 0.5
+    cx += K[0, 2]
+    cy += K[1, 2]
+    # Get focals
+    fx = K[0, 0]
+    fy = K[1, 1]
+    # New kp
+    kp += [
+        (h5_kp - np.array([[cx, cy]])) / np.asarray([[fx, fy]])
+    ]
+    # New desc
+    desc += [h5_desc]
+    # exec(embed_breakpoint())
     return kp, desc
 
 
