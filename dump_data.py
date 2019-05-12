@@ -363,15 +363,17 @@ def compute_sift(img):
     return xy, cv_desc
 
 def compute_intrinsics(img, i, geom, geom_type):
-    cx = (img[i][0].shape[1] - 1.0) * 0.5
-    cy = (img[i][0].shape[0] - 1.0) * 0.5
+    h, w = img[i].shape[1:]
+    cx = (w - 1.0) * 0.5
+    cy = (h - 1.0) * 0.5
     # Correct coordinates using K
-    cx += parse_geom(geom, geom_type)["K"][i, 0, 2]
-    cy += parse_geom(geom, geom_type)["K"][i, 1, 2]
+    Ks = parse_geom(geom, geom_type)["K"]
+    cx += Ks[i, 0, 2]
+    cy += Ks[i, 1, 2]
 
     # Correct focals
-    fx = parse_geom(geom, geom_type)["K"][i, 0, 0]
-    fy = parse_geom(geom, geom_type)["K"][i, 1, 1]
+    fx = Ks[i, 0, 0]
+    fy = Ks[i, 1, 1]
     exec(embed_breakpoint())
     return cx, cy, fx, fy
 
