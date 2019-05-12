@@ -134,7 +134,8 @@ def make_xy(num_sample, pairs, kp, z, desc, img, geom, vis, depth, geom_type,
             if not os.path.exists(dump_file):
                 if kp[i] is None:
                     assert config.precomputed_kp_method is None, 'please load and use precomputed keypionts'
-                    xy, cx, cy, fx, fy, cv_desc = compute_sift(img, i, geom, geom_type)
+                    xy, cv_desc = compute_sift(img[i])
+                    cx, cy, fx, fy = compute_intrinsics(img, i, geom, geom_type)
                     kp[i] = (
                         xy - np.array([[cx, cy]])
                     ) / np.asarray([[fx, fy]])
@@ -278,13 +279,7 @@ def make_xy(num_sample, pairs, kp, z, desc, img, geom, vis, depth, geom_type,
         # Save img1 and img2 for display
         img1s += [img[ii]]
         img2s += [img[jj]]
-        cx = (img[ii][0].shape[1] - 1.0) * 0.5
-        cy = (img[ii][0].shape[0] - 1.0) * 0.5
-        # Correct coordinates using K
-        cx += parse_geom(geom, geom_type)["K"][ii, 0, 2]
-        cy += parse_geom(geom, geom_type)["K"][ii, 1, 2]
-        fx = parse_geom(geom, geom_type)["K"][ii, 0, 0]
-        fy = parse_geom(geom, geom_type)["K"][ii, 1, 1]
+        cx, cy, fx, fy = compute_intrinsics(img, ii, geom, geom_type)
         if np.isclose(fx, fy):
             f = fx
         else:
@@ -292,13 +287,7 @@ def make_xy(num_sample, pairs, kp, z, desc, img, geom, vis, depth, geom_type,
         cx1s += [cx]
         cy1s += [cy]
         f1s += [f]
-        cx = (img[jj][0].shape[1] - 1.0) * 0.5
-        cy = (img[jj][0].shape[0] - 1.0) * 0.5
-        # Correct coordinates using K
-        cx += parse_geom(geom, geom_type)["K"][jj, 0, 2]
-        cy += parse_geom(geom, geom_type)["K"][jj, 1, 2]
-        fx = parse_geom(geom, geom_type)["K"][jj, 0, 0]
-        fy = parse_geom(geom, geom_type)["K"][jj, 1, 1]
+        cx, cy, fx, fy = compute_intrinsics(img, jj, geom, geom_type)
         if np.isclose(fx, fy):
             f = fx
         else:
@@ -367,19 +356,23 @@ def compute_z_value(img, i, geom, geom_type, kp, depth):
         cz = np.ones((xy.shape[0], 1))
     return cz
 
-def compute_sift(img, i, geom, geom_type):
-    cv_kp, cv_desc = sift.detectAndCompute(img[i].transpose(
+def compute_sift(img):
+    cv_kp, cv_desc = sift.detectAndCompute(img.transpose(
         1, 2, 0), None)
-    cx = (img[i][0].shape[1] - 1.0) * 0.5
-    cy = (img[i][0].shape[0] - 1.0) * 0.5
+    xy = np.array([_kp.pt for _kp in cv_kp])
+    return xy, cv_desc
+
+def compute_intrinsics(img, i, geom, geom_type):
+    cx = (img[i].shape[1] - 1.0) * 0.5
+    cy = (img[i].shape[0] - 1.0) * 0.5
     # Correct coordinates using K
     cx += parse_geom(geom, geom_type)["K"][i, 0, 2]
     cy += parse_geom(geom, geom_type)["K"][i, 1, 2]
-    xy = np.array([_kp.pt for _kp in cv_kp])
+
     # Correct focals
     fx = parse_geom(geom, geom_type)["K"][i, 0, 0]
     fy = parse_geom(geom, geom_type)["K"][i, 1, 1]
-    return xy, cx, cy, fx, fy, cv_desc
+    return cx, cy, fx, fy
 
 
 print("-------------------------DUMP-------------------------")
