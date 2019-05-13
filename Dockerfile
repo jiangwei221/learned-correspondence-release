@@ -21,7 +21,7 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-4.5.11-Linux-x86
 
 RUN conda install python=3.6.5
 
-# install lf-net requirements
+# install requirements
 RUN mkdir /container_home && \
     cd /container_home && \
     git clone https://github.com/jiangwei221/learned-correspondence-release.git && \
