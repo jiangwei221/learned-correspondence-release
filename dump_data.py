@@ -374,7 +374,7 @@ def compute_intrinsics(img, i, geom, geom_type):
     # Correct focals
     fx = Ks[i, 0, 0]
     fy = Ks[i, 1, 1]
-    exec(embed_breakpoint())
+    # exec(embed_breakpoint())
     return cx, cy, fx, fy
 
 
