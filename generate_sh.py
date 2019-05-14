@@ -32,7 +32,7 @@ def main():
         with open('./jobs/todo/{0}.sh'.format(dataset_name), 'w') as f:
             f.write("#!/bin/bash\n")
             f.write("source ~/.bashrc\n")
-            f.write("activate torch1.0\n")
+            f.write("conda activate torch1.0\n")
             f.write('{0}\n'.format(command))
 
 if __name__ == '__main__':
