@@ -308,12 +308,12 @@ def get_precomputed_kp_lift(img_file, geom, x, kp, desc):
     ]
     # New desc
     desc += [h5_desc]
-    exec(embed_breakpoint())
+    # exec(embed_breakpoint())
     return kp, desc
 
 
 def get_precomputed_kp_lfnet(img_file, geom, x, kp, desc):
-    lfnet_feat_dir = '/home/jiangwei/Desktop/temp/lf-net-release/outputs_lfnet_feat'
+    lfnet_feat_dir = '/lustre04/scratch/jiangwei/datasets/outputs_lfnet_feat'
     desc_file = os.path.join(lfnet_feat_dir, '{0}.npz'.format(img_file.replace('./datasets/', '').replace('/images', '')))
     lfnet_feat_data = np.load(desc_file)
     h5_kp = lfnet_feat_data['kpts'][:, :2]
@@ -325,7 +325,7 @@ def get_precomputed_kp_lfnet(img_file, geom, x, kp, desc):
     ]
     # New desc
     desc += [h5_desc]
-    exec(embed_breakpoint())
+    # exec(embed_breakpoint())
     # exec(embed_breakpoint())
     return kp, desc
 
@@ -340,7 +340,7 @@ def get_intrinsics(geom, x):
     # Get focals
     fx = K[0, 0]
     fy = K[1, 1]
-    exec(embed_breakpoint())
+    # exec(embed_breakpoint())
     return cx, cy, fx, fy
 
 
