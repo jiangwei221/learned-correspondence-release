@@ -26,13 +26,13 @@ def main():
                         'reichstag',
                         'sacre_coeur',
                         'st_peters',]
-    base_str = './dump_data.py --data_tr={0} --data_va={0} --data_te={0}'
+    base_str = './dump_data.py --data_tr={0} --data_va={0} --data_te={0} --precomputed_kp_method="lfnet"'
     for dataset_name in dataset_name_lsit:
         command = base_str.format(dataset_name)
         with open('./jobs/todo/{0}.sh'.format(dataset_name), 'w') as f:
             f.write("#!/bin/bash\n")
             f.write("source ~/.bashrc\n")
-            f.write("activate torch1.0\n")
+            f.write("conda activate torch1.0\n")
             f.write('{0}\n'.format(command))
 
 if __name__ == '__main__':
