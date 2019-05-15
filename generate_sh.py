@@ -26,7 +26,7 @@ def main():
                         'reichstag',
                         'sacre_coeur',
                         'st_peters',]
-    base_str = './dump_data.py --data_tr={0} --data_va={0} --data_te={0} --precomputed_kp_method="lfnet"'
+    base_str = './dump_data.py --data_tr={0} --data_va={0} --data_te={0} --precomputed_kp_method="superpoint"'
     for dataset_name in dataset_name_lsit:
         command = base_str.format(dataset_name)
         with open('./jobs/todo/{0}.sh'.format(dataset_name), 'w') as f:
