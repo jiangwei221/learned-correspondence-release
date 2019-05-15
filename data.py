@@ -290,7 +290,7 @@ def get_precomputed_kp(precomputed_kp_method, img_file, geom, x, kp, desc):
     elif precomputed_kp_method == 'lfnet':
         kp, desc = get_precomputed_kp_lfnet(img_file, geom, x, kp, desc)
     elif precomputed_kp_method == 'superpoint':
-        raise NotImplementedError()
+        kp, desc = get_precomputed_kp_sp(img_file, geom, x, kp, desc)
     else:
         raise ValueError('unknown precomputed key point method: {0}'.format(precomputed_kp_method))
     return kp, desc
@@ -308,7 +308,7 @@ def get_precomputed_kp_lift(img_file, geom, x, kp, desc):
     ]
     # New desc
     desc += [h5_desc]
-    exec(embed_breakpoint())
+    # exec(embed_breakpoint())
     return kp, desc
 
 
@@ -325,9 +325,27 @@ def get_precomputed_kp_lfnet(img_file, geom, x, kp, desc):
     ]
     # New desc
     desc += [h5_desc]
-    exec(embed_breakpoint())
     # exec(embed_breakpoint())
     return kp, desc
+
+def get_precomputed_kp_sp(img_file, geom, x, kp, desc):
+    sp_feat_dir = '/home/jiangwei/Desktop/temp/superpoint_ml/dump_sp/'
+    
+    desc_file = os.path.join(sp_feat_dir, '{0}.h5'.format(img_file.replace('./datasets/', '').replace('/images', '')))
+    with h5py.File(desc_file, "r") as ifp:
+        h5_kp = ifp["keypoints"].value[:, :2]
+        h5_desc = ifp["desc"].value
+    # Get K (first 9 numbers of geom)
+    cx, cy, fx, fy = get_intrinsics(geom, x)
+    # New kp
+    kp += [
+        (h5_kp - np.array([[cx, cy]])) / np.asarray([[fx, fy]])
+    ]
+    # New desc
+    desc += [h5_desc]
+    # exec(embed_breakpoint())
+    return kp, desc
+
 
 def get_intrinsics(geom, x):
     K = geom[-1][:9].reshape(3, 3)
@@ -340,7 +358,7 @@ def get_intrinsics(geom, x):
     # Get focals
     fx = K[0, 0]
     fy = K[1, 1]
-    exec(embed_breakpoint())
+    # exec(embed_breakpoint())
     return cx, cy, fx, fy
 
 
