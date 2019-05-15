@@ -329,7 +329,7 @@ def get_precomputed_kp_lfnet(img_file, geom, x, kp, desc):
     return kp, desc
 
 def get_precomputed_kp_sp(img_file, geom, x, kp, desc):
-    sp_feat_dir = '/home/jiangwei/Desktop/temp/superpoint_ml/dump_sp/'
+    sp_feat_dir = '/home/jiangwei/scratch/datasets/dump_sp/'
     
     desc_file = os.path.join(sp_feat_dir, '{0}.h5'.format(img_file.replace('./datasets/', '').replace('/images', '')))
     with h5py.File(desc_file, "r") as ifp:
