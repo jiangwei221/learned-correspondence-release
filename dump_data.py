@@ -336,7 +336,8 @@ def create_pool_arg(cur_pairs, dump_dir):
 
 def create_mp_pool():
     # Run mp job
-    ratio_CPU = 0.8
+    ratio_CPU = 0.4
+    # number_of_process = 4
     number_of_process = int(ratio_CPU * mp.cpu_count())
     pool = mp.Pool(processes=number_of_process)
     return pool
