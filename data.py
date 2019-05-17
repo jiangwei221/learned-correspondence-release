@@ -313,7 +313,7 @@ def get_precomputed_kp_lift(img_file, geom, x, kp, desc):
 
 
 def get_precomputed_kp_lfnet(img_file, geom, x, kp, desc):
-    lfnet_feat_dir = '/lustre04/scratch/jiangwei/datasets/outputs_lfnet_feat'
+    lfnet_feat_dir = '/home/jiangwei/scratch/datasets/2k_pts/outputs_lfnet_feat_2k'
     desc_file = os.path.join(lfnet_feat_dir, '{0}.npz'.format(img_file.replace('./datasets/', '').replace('/images', '')))
     lfnet_feat_data = np.load(desc_file)
     h5_kp = lfnet_feat_data['kpts'][:, :2]
